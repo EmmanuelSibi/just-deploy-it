@@ -6,10 +6,6 @@ const Redis = require("ioredis");
 
 const publisher = new Redis(process.env.REDIS_URL);
 
-function publishLog(log) {
-  publisher.publish(`logs:${PROJECT_ID}`, JSON.stringify({ log }));
-}
-
 const mime = require("mime-types");
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 
@@ -19,6 +15,12 @@ const s3Client = new S3Client({
 
 const PROJECT_ID = process.env.PROJECT_ID;
 const DEPLOYEMENT_ID = process.env.DEPLOYEMENT_ID
+
+
+function publishLog(log) {
+  publisher.publish(`logs:${PROJECT_ID}:${DEPLOYEMENT_ID}`, JSON.stringify({ log, timestamp: Date.now(), deployementId: DEPLOYEMENT_ID, projectId: PROJECT_ID}));
+}
+
 
 async function init() {
   console.log("starting build...");
@@ -73,6 +75,8 @@ async function init() {
     }
     console.log("Upload completed");
     publishLog("Upload completed");
+   
+      process.exit(0);
   });
 }
 init();

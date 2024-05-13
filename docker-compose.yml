@@ -1,0 +1,28 @@
+services:
+  api-server:
+    build:
+      context: ./api-server
+      dockerfile: Dockerfile
+    ports:
+      - "9000:9000"  
+    networks:
+      - app-network
+    depends_on:
+      - reverse-proxy
+    env_file:
+      - ./api-server/.env
+
+  reverse-proxy:
+    build:
+      context: ./reverse-proxy
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"  
+    networks:
+      - app-network
+    env_file:
+      - ./reverse-proxy/.env
+
+networks:
+  app-network:
+    driver: bridge

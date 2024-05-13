@@ -61,12 +61,10 @@ app.post("/deploy", async (req, res) => {
   });
   if (runningDeployement) {
     await prisma.deployement.update({
-        where: { id: runningDeployement.id },
-        data: { status: "FAIL" },
-    })
+      where: { id: runningDeployement.id },
+      data: { status: "FAIL" },
+    });
     return res.status(400).json({
-        
-
       error: "Another deployement is already running for this project",
     });
   }
@@ -99,7 +97,7 @@ app.post("/deploy", async (req, res) => {
         {
           name: "builder-image-container",
           environment: [
-            { name: "GIT_REPOSITORY__URL", value: project.gitURL },
+            { name: "GIT_REPOSITORY_URL", value: project.gitURL },
             { name: "PROJECT_ID", value: projectId },
             { name: "DEPLOYEMENT_ID", value: deployment.id },
           ],
@@ -144,6 +142,7 @@ async function initRedisSubscribe() {
       " with message: ",
       message
     );
+    const jsonMessage = JSON.parse(message);
     //store in Clickhouse DB
   });
 }
