@@ -75,8 +75,11 @@ async function init() {
     }
     console.log("Upload completed");
     publishLog("Upload completed");
-   
-      process.exit(0);
+    publisher.quit();
+
+    
+   //safety exit -- to avoid tasks running forever
+    process.exit(0);
   });
 }
 init();

@@ -6,11 +6,20 @@ const app = express();
 const { PrismaClient } = require("@prisma/client");
 const { z } = require("zod");
 const Redis = require("ioredis");
+const {createClient} = require('@clickhouse/client')
+const {v3:uuidv3 } = require('uuid')
 
 const PORT = process.env.PORT || 8000;
 const ecsClient = new ECSClient({
   region: process.env.AWS_REGION,
 });
+
+const client = createClient({
+    host: process.env.CLICKHOUSE_HOST,
+    database: process.env.CLICKHOUSE_DATABASE,
+    username: process.env.CLICKHOUSE_USER,
+    password: process.env.CLICKHOUSE_PASSWORD,
+})
 
 const subscriber = new Redis(process.env.REDIS_URL);
 
@@ -135,7 +144,7 @@ app.post("/deploy", async (req, res) => {
 async function initRedisSubscribe() {
   console.log("Subscribed to logs....");
   subscriber.psubscribe("logs:*");
-  subscriber.on("pmessage", (pattern, channel, message) => {
+  subscriber.on("pmessage", async(pattern, channel, message) => {
     console.log(
       "Received message in channel: ",
       channel,
@@ -143,7 +152,21 @@ async function initRedisSubscribe() {
       message
     );
     const jsonMessage = JSON.parse(message);
+
     //store in Clickhouse DB
+    try {
+        const { query_id } = await client.insert({
+            table: 'log_events',
+            values: [{  deployment_id:message.deploymentId , log:message.log }],
+            format: 'JSONEachRow'
+        })
+        console.log(query_id)
+    } catch (err) {
+        console.log(err)
+    }
+
+
+
   });
 }
 
