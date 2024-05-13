@@ -1,6 +1,9 @@
 const { exec } = require("child_process");
 const path = require("path");
 const fs = require('fs')
+require('dotenv').config()
+
+
 
 const mime = require('mime-types')
 const {S3Client, PutObjectCommand} = require("@aws-sdk/client-s3")
@@ -15,6 +18,7 @@ const PROJECT_ID = process.env.PROJECT_ID;
 async function init() {
 
   console.log('Executing script.js')
+  console.log("testing env", process.env.TEST)
   const outDirpath = path.join(__dirname, "output");
   const p = exec(`cd ${outDirpath} && npm ci && npm run build`);
 
