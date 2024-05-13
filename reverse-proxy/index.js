@@ -1,5 +1,6 @@
 const express = require('express');
 const httpProxy = require('http-proxy');
+require('dotenv').config();
 
 const app = express();
 
@@ -7,7 +8,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const proxy = httpProxy.createProxy();
 
-const BASE_PATH = 'https://justdeployit.s3.ap-south-1.amazonaws.com/__output'
+const BASE_PATH = process.env.BASE_PATH;
 
 app.use((req, res) => {
     const hostname = req.hostname;
