@@ -1,28 +1,52 @@
 services:
   api-server:
+    container_name: api-server
     build:
       context: ./api-server
       dockerfile: Dockerfile
     ports:
-      - "9000:9000"  
+      - "9000:9000"
     networks:
       - app-network
     depends_on:
       - reverse-proxy
+      - postgres
+     
+
     env_file:
       - ./api-server/.env
 
   reverse-proxy:
+    container_name: reverse-proxy
     build:
       context: ./reverse-proxy
       dockerfile: Dockerfile
     ports:
-      - "3001:3001"  
+      - "3001:3001"
     networks:
       - app-network
     env_file:
       - ./reverse-proxy/.env
 
+  postgres:
+    container_name: postgres
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+
+    restart: unless-stopped
+    networks:
+      - app-network
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+
+  
+
+   
 networks:
   app-network:
     driver: bridge

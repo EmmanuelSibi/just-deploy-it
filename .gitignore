@@ -53,6 +53,8 @@ web_modules/
 
 .DS_Store
 
+pgdata
+
 # Optional eslint cache
 .eslintcache
 

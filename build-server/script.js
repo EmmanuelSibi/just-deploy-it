@@ -3,24 +3,28 @@ const path = require("path");
 const fs = require("fs");
 require("dotenv").config();
 const Redis = require("ioredis");
-
-const publisher = new Redis(process.env.REDIS_URL);
-
 const mime = require("mime-types");
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION || "ap-south-1",
 });
-
+const publisher = new Redis(process.env.REDIS_URL)
 const PROJECT_ID = process.env.PROJECT_ID;
-const DEPLOYEMENT_ID = process.env.DEPLOYEMENT_ID
-
+const DEPLOYEMENT_ID = process.env.DEPLOYEMENT_ID;
 
 function publishLog(log) {
-  publisher.publish(`logs:${PROJECT_ID}:${DEPLOYEMENT_ID}`, JSON.stringify({ log, timestamp: Date.now(), deployementId: DEPLOYEMENT_ID, projectId: PROJECT_ID}));
+  publisher.publish(
+    `logs:${PROJECT_ID}:${DEPLOYEMENT_ID}`,
+    JSON.stringify({
+      log,
+      timestamp: Date.now(),
+      deployementId: DEPLOYEMENT_ID,
+      projectId: PROJECT_ID,
+    })
+  );
 }
-
 
 async function init() {
   console.log("starting build...");
@@ -77,11 +81,8 @@ async function init() {
     publishLog("Upload completed");
     publisher.quit();
 
-    
-   //safety exit -- to avoid tasks running forever
+    //safety exit -- to avoid tasks running forever
     process.exit(0);
   });
 }
 init();
-
-
