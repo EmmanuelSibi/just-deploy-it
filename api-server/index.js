@@ -141,6 +141,22 @@ app.post("/deploy", async (req, res) => {
   });
 });
 
+app.get('/logs/:id', async (req, res) => {
+  const id = req.params.id;
+  const logs = await client.query({
+      query: `SELECT event_id, deployment_id, log, timestamp from log_events where deployment_id = {deployment_id:String}`,
+      query_params: {
+          deployment_id: id
+      },
+      format: 'JSONEachRow'
+  })
+
+  const rawLogs = await logs.json()
+
+  return res.json({ logs: rawLogs })
+})
+
+
 async function initRedisSubscribe() {
   console.log("Subscribed to logs....");
   subscriber.psubscribe("logs:*");
