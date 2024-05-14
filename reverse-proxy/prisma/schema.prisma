@@ -1,0 +1,37 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id           String        @id @default(uuid())
+  name         String
+  gitURL       String        @map("git_url")
+  subDomain    String        @map("subdomain")@unique
+  customDomain String?       @map("custom_domain")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  Deployement  Deployement[]
+}
+
+model Deployement {
+  id        String            @id @default(uuid())
+  projectId String            @map("project_id")
+  status    DeployementStatus @default(NOT_STARTED)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  project   Project           @relation(fields: [projectId], references: [id])
+}
+
+enum DeployementStatus {
+  NOT_STARTED
+  QUEUED
+  IN_PROGRESS
+  READY
+  FAIL
+}

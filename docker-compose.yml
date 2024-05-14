@@ -11,8 +11,6 @@ services:
     depends_on:
       - reverse-proxy
       - postgres
-     
-
     env_file:
       - ./api-server/.env
 
@@ -25,6 +23,8 @@ services:
       - "3001:3001"
     networks:
       - app-network
+    depends_on:
+      - postgres
     env_file:
       - ./reverse-proxy/.env
 
