@@ -6,6 +6,7 @@ const app = express();
 const { PrismaClient } = require("@prisma/client");
 const { z } = require("zod");
 const Redis = require("ioredis");
+const cors = require('cors')
 const {createClient} = require('@clickhouse/client')
 const {v3:uuidv3 } = require('uuid')
 
@@ -13,6 +14,8 @@ const PORT = process.env.PORT || 8000;
 const ecsClient = new ECSClient({
   region: process.env.AWS_REGION,
 });
+
+
 
 const client = createClient({
     host: process.env.CLICKHOUSE_HOST,
@@ -29,6 +32,7 @@ const config = {
   cluster: process.env.CLUSTER_NAME,
   taskDefinition: process.env.TASK_DEFINITION,
 };
+app.use(cors())
 app.use(express.json());
 
 app.post("/project", async (req, res) => {
@@ -125,7 +129,6 @@ app.post("/deploy", async (req, res) => {
   } catch (error) {
     console.error(error.message);
   }
-
   console.log("Task finished");
   //task is finished  -- not actual representation of task
   await prisma.deployement.update({
@@ -171,16 +174,17 @@ async function initRedisSubscribe() {
 
     //store in Clickhouse DB
     try {
+      console.log("deployment_id",jsonMessage.deployementId)
+      console.log("log",jsonMessage.log)
         const { query_id } = await client.insert({
             table: 'log_events',
-            values: [{  deployment_id:message.deploymentId , log:message.log }],
+            values: [{  deployment_id:jsonMessage.deployementId , log:jsonMessage.log }],
             format: 'JSONEachRow'
         })
         console.log(query_id)
     } catch (err) {
         console.log(err)
     }
-
 
 
   });

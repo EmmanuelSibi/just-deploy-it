@@ -14,8 +14,8 @@ const publisher = new Redis(process.env.REDIS_URL)
 const PROJECT_ID = process.env.PROJECT_ID;
 const DEPLOYEMENT_ID = process.env.DEPLOYEMENT_ID;
 
-function publishLog(log) {
-  publisher.publish(
+ async function publishLog(log) {
+   await publisher.publish(
     `logs:${PROJECT_ID}:${DEPLOYEMENT_ID}`,
     JSON.stringify({
       log,
@@ -28,23 +28,23 @@ function publishLog(log) {
 
 async function init() {
   console.log("starting build...");
-  publishLog("Build Started...");
+ await publishLog("Build Started...");
 
   const outDirpath = path.join(__dirname, "output");
   const p = exec(`cd ${outDirpath} && npm ci && npm run build`);
 
-  p.stdout.on("data", (data) => {
+  p.stdout.on("data", async(data) => {
     console.log(data.toString());
-    publishLog(data.toString());
+   await publishLog(data.toString());
   });
 
-  p.stdout.on("error", (data) => {
+  p.stdout.on("error", async(data) => {
     console.log(data.toString());
-    publishLog(`error:${data.toString()}`);
+    await publishLog(`error:${data.toString()}`);
   });
   p.on("close", async (code) => {
     console.log(`Build completed  with code ${code}`);
-    publishLog(`Build completed  with code ${code}`);
+   await publishLog(`Build completed  with code ${code}`);
     const possibleFolders = ["dist", "build"];
     let distFolderPath = null;
     for (const folder of possibleFolders) {
@@ -56,18 +56,19 @@ async function init() {
     }
     if (!distFolderPath) {
       console.error("Neither 'dist' nor 'build' folder found!");
-      publishLog("Neither 'dist' nor 'build' folder found!");
+    await  publishLog("Neither 'dist' nor 'build' folder found!");
       return;
     }
     const distFolderContents = fs.readdirSync(distFolderPath, {
       recursive: true,
     });
-    publishLog("Uploading files...");
+   await  publishLog("Uploading files...");
+   const uploadPromises = [];
     for (const file of distFolderContents) {
       const filePath = path.join(distFolderPath, file);
       if (fs.lstatSync(filePath).isDirectory()) continue;
       console.log("Uploading", filePath);
-      publishLog(`Uploading ${filePath}`);
+     await publishLog(`Uploading ${filePath}`);
 
       const command = new PutObjectCommand({
         Bucket: "justdeployit",
@@ -75,14 +76,21 @@ async function init() {
         Body: fs.createReadStream(filePath),
         ContentType: mime.lookup(filePath),
       });
-      await s3Client.send(command);
+      uploadPromises.push( s3Client.send(command));
     }
+    await Promise.all(uploadPromises);
     console.log("Upload completed");
-    publishLog("Upload completed");
+    await publishLog("Upload completed");
+
     publisher.quit();
+    process.exit(0);
+   
 
     //safety exit -- to avoid tasks running forever
-    process.exit(0);
+    
   });
+
+ 
+
 }
 init();
