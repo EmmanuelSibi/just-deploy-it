@@ -11,6 +11,7 @@ services:
     depends_on:
       - reverse-proxy
       - postgres
+      - clickhouse
     env_file:
       - ./api-server/.env
 
@@ -61,6 +62,23 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - ./pgdata:/var/lib/postgresql/data
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    environment:
+      - CLICKHOUSE_DB=${CLICKHOUSE_DB}
+      - CLICKHOUSE_USER=${CLICKHOUSE_USER}
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
+    ports:
+      - "9000:9000"
+      - "8123:8123"
+    depends_on:
+      - postgres
+
+    restart: unless-stopped
+    networks:
+      - app-network
 
 networks:
   app-network:
