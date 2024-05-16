@@ -13,8 +13,8 @@ export default function About() {
                 <p className="max-w-[600px] text-[#5a5a5a] md:text-xl dark:text-[#d0d0d0]">
                   JustDeployIt is a platform that makes it easy to deploy your
                   projects with a single click. We believe in simplicity and
-                  efficiency, so we've built a tool that takes the hassle out of
-                  deployment.
+                  efficiency, so we have built a tool that takes the hassle out
+                  of deployment.
                 </p>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
                   <Button

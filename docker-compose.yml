@@ -5,7 +5,7 @@ services:
       context: ./api-server
       dockerfile: Dockerfile
     ports:
-      - "9000:9000"
+      - "8000:8000"
     networks:
       - app-network
     depends_on:
@@ -13,6 +13,24 @@ services:
       - postgres
     env_file:
       - ./api-server/.env
+
+  frontend:
+    container_name: frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - 3000:3000
+    depends_on:
+      - api-server
+      - reverse-proxy
+      - postgres
+      - clickhouse
+    env_file:
+      - ./frontend/.env
+    networks:
+      - app-network
 
   reverse-proxy:
     container_name: reverse-proxy
@@ -44,9 +62,6 @@ services:
     volumes:
       - ./pgdata:/var/lib/postgresql/data
 
-  
-
-   
 networks:
   app-network:
     driver: bridge

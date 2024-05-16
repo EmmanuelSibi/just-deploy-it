@@ -7,8 +7,8 @@ const { PrismaClient } = require("@prisma/client");
 const { z } = require("zod");
 const Redis = require("ioredis");
 const cors = require('cors')
-const {createClient} = require('@clickhouse/client')
-const {v3:uuidv3 } = require('uuid')
+const { createClient } = require('@clickhouse/client')
+const { v3: uuidv3 } = require('uuid')
 
 const PORT = process.env.PORT || 8000;
 const ecsClient = new ECSClient({
@@ -18,11 +18,11 @@ const ecsClient = new ECSClient({
 
 
 const client = createClient({
-    host: process.env.CLICKHOUSE_HOST,
-    database: process.env.CLICKHOUSE_DATABASE,
-    username: process.env.CLICKHOUSE_USER,
-    password: process.env.CLICKHOUSE_PASSWORD,
+  url: process.env.CLICKHOUSE_URL,
 })
+if (client) {
+  console.log("Connected to Clickhouse")
+}
 
 const subscriber = new Redis(process.env.REDIS_URL);
 
@@ -32,7 +32,10 @@ const config = {
   cluster: process.env.CLUSTER_NAME,
   taskDefinition: process.env.TASK_DEFINITION,
 };
-app.use(cors())
+app.use(cors({
+  origin: process.env.FRONTEND_URL
+}))
+
 app.use(express.json());
 
 app.post("/project", async (req, res) => {
@@ -147,11 +150,11 @@ app.post("/deploy", async (req, res) => {
 app.get('/logs/:id', async (req, res) => {
   const id = req.params.id;
   const logs = await client.query({
-      query: `SELECT event_id, deployment_id, log, timestamp from log_events where deployment_id = {deployment_id:String}`,
-      query_params: {
-          deployment_id: id
-      },
-      format: 'JSONEachRow'
+    query: `SELECT event_id, deployment_id, log, timestamp from log_events where deployment_id = {deployment_id:String}`,
+    query_params: {
+      deployment_id: id
+    },
+    format: 'JSONEachRow'
   })
 
   const rawLogs = await logs.json()
@@ -163,7 +166,7 @@ app.get('/logs/:id', async (req, res) => {
 async function initRedisSubscribe() {
   console.log("Subscribed to logs....");
   subscriber.psubscribe("logs:*");
-  subscriber.on("pmessage", async(pattern, channel, message) => {
+  subscriber.on("pmessage", async (pattern, channel, message) => {
     console.log(
       "Received message in channel: ",
       channel,
@@ -174,16 +177,16 @@ async function initRedisSubscribe() {
 
     //store in Clickhouse DB
     try {
-      console.log("deployment_id",jsonMessage.deployementId)
-      console.log("log",jsonMessage.log)
-        const { query_id } = await client.insert({
-            table: 'log_events',
-            values: [{  deployment_id:jsonMessage.deployementId , log:jsonMessage.log }],
-            format: 'JSONEachRow'
-        })
-        console.log(query_id)
+      console.log("deployment_id", jsonMessage.deployementId)
+      console.log("log", jsonMessage.log)
+      const { query_id } = await client.insert({
+        table: 'log_events',
+        values: [{ deployment_id: jsonMessage.deployementId, log: jsonMessage.log }],
+        format: 'JSONEachRow'
+      })
+      console.log(query_id)
     } catch (err) {
-        console.log(err)
+      console.log(err)
     }
 
 

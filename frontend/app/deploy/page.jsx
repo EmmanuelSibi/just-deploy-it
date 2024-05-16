@@ -40,6 +40,11 @@ export default function Home() {
     if (intervalRef.current) clearInterval(intervalRef.current);
     console.log("start polling");
 
+    const timeout = setTimeout(() => {
+      console.log("Polling timed out after 1.5 minutes");
+      stopPolling();
+    }, 90000);
+
     intervalRef.current = setInterval(async () => {
       try {
         const response = await axios.get(`${BACKEND_URL}/logs/${id}`);
